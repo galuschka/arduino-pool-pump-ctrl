@@ -1,0 +1,54 @@
+Farb-Codierung:
+---------------
+    bk  black
+    r   red
+    y   yellow
+    w   white
+    gy  grey
+    pu  purple
+    bl  blue
+    gn  green
+    o   orange
+    br  brown
+
+
+Verkabelung:
+------------
+    Ard. | Kabel | D-Sub 15  | Kabel | Buchs. | Kabel | DEM16217
+    -----+-------+-----------+-------+--------+-------+---------
+    A0      bk       1
+     2      y        2 (1w)     y        2      gy
+     3      w        3 
+     4      y        4
+     5      w        5
+     6      y        6 (L-)     y        6      gy      L-
+     7      r        7 (DB4)    r       10      y       11
+     8      w        8 (DB5)    w       11      o       12
+     9      r        9 (DB6)    r       12      r       13
+    10      bk      10 (DB7)    bk      13      br      14
+    11      r       11 (RS)     r        7      pu       4
+    12      y       12 (E)      y        9      gn       6
+    13      w       13 (RW)     w        8      bl       5
+    GND     bk      14          bk      3+4     bk       1
+    VCC     r       15          r       1+5     w        2
+
+
+DEM16217:
+---------
+    L+: backlight LED
+    L-: backlight LED
+     1: GND
+     2: VDD 5V (2.7 .. 5.5)
+     3: Vo (contrast)
+     4: register select (0=instruction 1=data)
+     5: read/write (0=write)
+     6: enable
+     7: DB0 (only, when interface data length is 8 bits)
+     8: DB1 (only, when interface data length is 8 bits)
+     9: DB2 (only, when interface data length is 8 bits)
+    10: DB3 (only, when interface data length is 8 bits)
+    11: DB4
+    12: DB5
+    13: DB6
+    14: DB7
+
