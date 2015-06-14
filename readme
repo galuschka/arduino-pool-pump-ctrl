@@ -1,0 +1,12 @@
+arduino project to control the filter pump of a swimming pool with effective use of solar absorbers
+
+This project is based on the following (pre) conditions:
+- There is just one pump for filtering and solar heater circulation
+- At least two one-wire temperature sensors:
+  - one at the top most point of the solar absorbers
+  - one in the water
+- Optional you may want to put some more sensors:
+  - one air temperature
+  - one directly on the controller itself to check its temperature manual
+
+Further infos coming on demand...
