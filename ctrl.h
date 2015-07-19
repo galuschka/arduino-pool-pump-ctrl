@@ -38,8 +38,8 @@ enum PIN
 #else
    ,PIN_PumpSwitch  =  3  // Schalter "Filter-Pumpe"
    ,PIN_LampSwitch  =  4  // Schalter "Licht"
-   ,PIN_PumpRelay   =  6  // Relais "Filter-Pumpe"
-   ,PIN_LampRelay   =  5  // Relais "Licht"
+   ,PIN_PumpRelay   =  5  // Relais "Filter-Pumpe"
+   ,PIN_LampRelay   =  6  // Relais "Licht"
 
    ,PIN_LCD_DB4     =  7  // pin 11 of DEM16217
    ,PIN_LCD_DB5     =  8  // pin 12 of DEM16217
@@ -93,7 +93,7 @@ class Ctrl
 #endif
   private:
     enum {
-      EE_FORMAT = 0
+      EE_FORMAT = 1
 
      ,EE_TYPE_RSVD = 0
      ,EE_TYPE_CTRL

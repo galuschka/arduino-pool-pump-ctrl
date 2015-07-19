@@ -162,18 +162,18 @@ int Relay::backup( int addr )
   addr = Ctrl::save( addr, (uint32_t) totalOn );
   addr = Ctrl::save( addr, (uint32_t) todayOn );
   addr = Ctrl::save( addr, (uint16_t) timeout );
+  addr = Ctrl::save( addr, (uint8_t)  swmode  );
   return addr;
 }
 
 void Relay::restore( int addr, uint8_t len )
 {
-  if (len >= 4) {
+  if (len >= 10) {
     totalOn = Ctrl::read4( addr );
-    if (len >= 8) {
-      todayOn = Ctrl::read4( addr + 4 );
-      if (len >= 10) {
-        timeout = Ctrl::read2( addr + 8 );
-      }
+    todayOn = Ctrl::read4( addr + 4 );
+    timeout = Ctrl::read2( addr + 8 );
+    if (len >= 11) {
+      swmode = Ctrl::read1( addr + 10 );
     }
   }
 }

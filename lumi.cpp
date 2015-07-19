@@ -65,9 +65,9 @@ byte Lumi::secLoop(void)
     }
   }
 
-  switch (status & 3)  // 1-2-0-3
+  switch (status & 3)  // 1-2-0-3 (night-morning-day-evening)
   {
-    case 1:  //  0.. 6:  night and check luminance >= lumDawn
+    case 1:  //  0.. 6 (deep night): check luminance >= lumDawn
       if (lumCurr < lumDawn) {
         cntDetect = 0;
         break;
@@ -75,24 +75,22 @@ byte Lumi::secLoop(void)
       if (++cntDetect < 6)
         break;
 
-      if (secDusk) { // when not set, we detected night at bootup
-        // at day time, secDawn is dawn of today and secDusk is dusk of yesterday
+      if (secDusk)  // when not set, we booted up at night
+        dayLight = (secDusk + 86400L - ctrl->sec);
+        // secDusk is dusk of yesterday
         // ==> secDusk of today will be 86400 secs later
-        unsigned long const newDayLight = (secDusk + 86400L - ctrl->sec);
-        // avgChange = ((avgChange * 3) + (newDayLight - dayLight) + 2) / 4;
-        dayLight = newDayLight;
-      }
+      // else: daylight read from backup
 
       secDawn = ctrl->sec;  // remember dawn time
       midnight = secDawn + (dayLight / 2L) + secCorr + 43200L;  // next midnight
 
       cntDetect = 0;
-      if (status & 4) {
-        status = 2;
+      if (status & 4)
         ctrl->lampRelay->autoOn( 0 );  // auto off in any case at dawn
-      }
+
       status = 2;
       ctrl->pumpRelay->night( 0 );  // start new day when dawn (to even check values at night)
+
       return DAWN;
 
     case 2:  //  6..12:  check luminance >= 50% + lumDawn / 2 to clear 2
@@ -105,7 +103,7 @@ byte Lumi::secLoop(void)
     case 0:  // 12..18:  check luminance < lumDawn
 
       if (status & 4) {             // switched on
-        if (lumCurr >= lumSwitch) {   // lighter than needed (temporary dark)
+        if (lumCurr > lumSwitch + 50) {  // again 5% lighter than needed (temporary dark)
           status = 0;
           ctrl->lampRelay->autoOn( 0 );
         }
@@ -114,9 +112,10 @@ byte Lumi::secLoop(void)
           status |= 4;
           ctrl->lampRelay->autoOn( 1 );
           if (midnight)
-            secOff = midnight + timeOff;  // midnight is next(!) midnight
+            secOff = midnight;  // midnight is next(!) midnight
           else
-            secOff = ctrl->sec + 14400;  // 4h
+            secOff = ctrl->sec + (86400 - dayLight) / 2;  // half night
+          secOff += timeOff;
         }
       }
 
@@ -127,7 +126,15 @@ byte Lumi::secLoop(void)
       if ((++cntDetect < 6) && ctrl->sec)  // detect night during boot up
         break;
 
-      secDusk = ctrl->sec;  // remember dusk time
+      if (secDawn && ! midnight) {  // boot up last night: we calc midnight here
+        // secDawn is dawn of this morning
+        // ==> secDusk of today will be 86400 secs later
+        dayLight = (ctrl->sec - secDawn);
+        midnight = secDawn + (dayLight / 2L) + secCorr + 43200L;  // next midnight
+        if (status & 4)
+          secOff = midnight + timeOff;  // midnight is next(!) midnight
+      }
+      secDusk = ctrl->sec;  // remember dusk time (maybe 0, when boot up at night)
       cntDetect = 0;
       status |= 3;
       ctrl->lampRelay->night( 1 );  // start new day when dusk (to check values next day)
@@ -140,6 +147,16 @@ byte Lumi::secLoop(void)
       else if (++cntDetect >= 6)
         status &= 5;
       break;
+  }
+
+  if (((status & 5) == 1) && (lumCurr < lumSwitch)) {  // now dark enough to switch on
+    status |= 4;
+    ctrl->lampRelay->autoOn( 1 );
+    if (midnight)
+      secOff = midnight;  // midnight is still next(!) midnight
+    else
+      secOff = secDusk + (86400 - dayLight) / 2;  // even when secDusk is 0
+    secOff += timeOff;
   }
 
   return NOCHANGE;
@@ -158,19 +175,16 @@ int Lumi::backup( int addr )
 void Lumi::restore( int addr, uint8_t len )
 {
   if (len >= 14) {
-    timeOff  = Ctrl::read4( addr + 0 );
-    dayLight = Ctrl::read4( addr + 4 );
-#if 1
-    secCorr  = Ctrl::read2( addr + 10 );
-    lumSwitch = ((((word) Ctrl::read1( addr + 12 ) << 8) + 12) / 25);
-    lumDawn   = ((((word) Ctrl::read1( addr + 13 ) << 8) + 12) / 25);
-#else
+    timeOff   = Ctrl::read4( addr +  0 );
+    dayLight  = Ctrl::read4( addr +  4 );
     secCorr   = Ctrl::read2( addr +  8 );
     lumSwitch = Ctrl::read2( addr + 10 );
     lumDawn   = Ctrl::read2( addr + 12 );
-#endif
+
     lumNight  = (lumDawn / 2);     // e.g. lumDawn = 40% -> lumNight = 20%
     lumDay    = 0x200 + lumNight;  // e.g. lumDawn = 40% -> lumDay   = 70%
+    if ((dayLight <= 7200L) || (dayLight >= 79200L))
+      dayLight = 43200L;  // 43200=12h 57600=16h
   }
 }
 

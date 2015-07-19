@@ -1,6 +1,7 @@
 #include <EEPROM.h>
 #include <OneWire.h>
 #include <LiquidCrystal.h>
+#include <avr/wdt.h>
 
 #include "ctrl.h"
 #include "version.h"
@@ -60,11 +61,16 @@ void setup(void)
   temp.setup(       & ctrl, & ow );  // pumpRelay->autoOn() used, to switch filter pump
 
   ctrl.restore();  // restore values from last backup (at dawn or driven manual by menu)
+
+  wdt_enable( WDTO_250MS );
+  wdt_reset();
 }
 
 void loop(void)
 {
   static unsigned long usecOfNextSec =  0;  // micros(), when next second is expected
+
+  wdt_reset();
 
   long diff = micros() - usecOfNextSec; // using micros to run max. about 2000 times on accidential value
   if (diff >= 0)

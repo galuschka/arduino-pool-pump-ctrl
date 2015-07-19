@@ -1,5 +1,6 @@
 #include <EEPROM.h>
 #include <inttypes.h>
+#include <avr/wdt.h>
 
 #include "ctrl.h"
 #include "display.h"    // LCD wrapper (info/menu/duplicate content on serial output)
@@ -64,33 +65,44 @@ void Ctrl::backup( byte whence )
   addr = save( addr, (uint8_t) EE_FORMAT );  // to check content
 
   addr = save( addr, (uint8_t) EE_TYPE_RSVD );
-  addr = save( addr, (uint8_t) 16 );  // 16 bytes reserved
-  addr += 16;
+  addr = save( addr, (uint8_t) 13 );  // 13 bytes reserved
+  addr += 13;
 
   addr = save( addr, (uint8_t) EE_TYPE_CTRL );
-  addr = save( addr, (uint8_t) (2 * sizeof(uint32_t)) );
+  aLen = addr++;
   addr = save( addr, (uint32_t) (totalOn + sec) );
   addr = save( addr, (uint32_t) (sec - lumi->dawn()) );  // todayOn
+  do addr = save( addr, (uint8_t) 0 ); while (addr & 3);
+  save( aLen, (uint8_t) (addr - (aLen + 1)) );
+  wdt_reset();
 
   addr = save( addr, (uint8_t) EE_TYPE_PUMP );
   aLen = addr;
   addr = pumpRelay->backup( addr + 1 );
+  do addr = save( addr, (uint8_t) 0 ); while (addr & 3);
   save( aLen, (uint8_t) (addr - (aLen + 1)) );
+  wdt_reset();
 
   addr = save( addr, (uint8_t) EE_TYPE_LAMP );
   aLen = addr;
   addr = lampRelay->backup( addr + 1 );
+  do addr = save( addr, (uint8_t) 0 ); while (addr & 3);
   save( aLen, (uint8_t) (addr - (aLen + 1)) );
+  wdt_reset();
 
   addr = save( addr, (uint8_t) EE_TYPE_LUMI );
   aLen = addr;
   addr = lumi->backup( addr + 1 );
+  do addr = save( addr, (uint8_t) 0 ); while (addr & 3);
   save( aLen, (uint8_t) (addr - (aLen + 1)) );
+  wdt_reset();
 
   addr = save( addr, (uint8_t) EE_TYPE_TEMP );
   aLen = addr;
   addr = temp->backup( addr + 1 );
+  do addr = save( addr, (uint8_t) 0 ); while (addr & 3);
   save( aLen, (uint8_t) (addr - (aLen + 1)) );
+  wdt_reset();
 
   save( addr, (uint8_t) EE_TYPE_END );
 }
